@@ -97,5 +97,39 @@ namespace HomeApi.Controllers
 
             return StatusCode(200, $"Устройство обновлено! Имя - {device.Name}, Серийный номер - {device.SerialNumber},  Комната подключения - {device.Room.Name}");
         }
+        /// <summary>
+        /// Поиск устройства по серийному номеру с последующим удалением
+        /// </summary>
+        /// <param name="serialId"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Route("Delete/BySerial/{serialId}")]
+        public async Task<IActionResult> DeleteBySerialId([FromRoute] Guid serialId)
+        {
+            var device = await _devices.GetDeviceById(serialId);
+            if (device == null)
+                return StatusCode(400, $"Ошибка: Устройство с идентификатором {serialId} не существует.");
+
+            await _devices.DeleteDevice(device);
+
+            return StatusCode(200, $"Устройство удалено! Имя - {device.Name}, Серийный номер - {device.SerialNumber},  Комната подключения - {device.Room.Name}");
+        }
+        /// <summary>
+        /// Поиск устройства по имени с последующим удалением
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Route("Delete/ByName/{name}")]
+        public async Task<IActionResult> DeleteBySerialId([FromRoute] string name)
+        {
+            var device = await _devices.GetDeviceByName(name);
+            if (device == null)
+                return StatusCode(400, $"Ошибка: Устройство с идентификатором {name} не существует.");
+
+            await _devices.DeleteDevice(device);
+
+            return StatusCode(200, $"Устройство удалено! Имя - {device.Name}, Серийный номер - {device.SerialNumber},  Комната подключения - {device.Room.Name}");
+        }
     }
 }

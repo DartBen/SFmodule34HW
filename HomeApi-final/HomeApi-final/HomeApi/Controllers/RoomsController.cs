@@ -1,7 +1,9 @@
 ﻿using System.Threading.Tasks;
 using AutoMapper;
+using HomeApi.Contracts.Models.Devices;
 using HomeApi.Contracts.Models.Rooms;
 using HomeApi.Data.Models;
+using HomeApi.Data.Queries;
 using HomeApi.Data.Repos;
 using Microsoft.AspNetCore.Mvc;
 
@@ -22,8 +24,26 @@ namespace HomeApi.Controllers
             _repository = repository;
             _mapper = mapper;
         }
-        
-        //TODO: Задание - добавить метод на получение всех существующих комнат
+
+        /// <summary>
+        /// Просмотр списка комнат
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("")]
+        public async Task<IActionResult> GetRooms()
+        {
+            var rooms = await _repository.GetRooms();
+
+            var resp = new GetRoomsResponse
+            {
+                RoomAmount = rooms.Length,
+                Rooms = _mapper.Map<Room[], RoomView[]>(rooms)
+            };
+
+            return StatusCode(200, resp);
+        }
+
         
         /// <summary>
         /// Добавление комнаты
@@ -41,6 +61,23 @@ namespace HomeApi.Controllers
             }
             
             return StatusCode(409, $"Ошибка: Комната {request.Name} уже существует.");
+        }
+
+        /// <summary>
+        /// Обновить существующую конмнату
+        /// </summary>
+        [HttpPut]
+        [Route("Update")]
+        public async Task<IActionResult> UpdateRoom([FromBody] AddRoomRequest request)
+        {
+            var existingRoom = await _repository.GetRoomByName(request.Name);
+            if(existingRoom == null)
+                return StatusCode(400, $"Комната {request.Name} не существует!");
+
+            var newRoom = _mapper.Map<AddRoomRequest, Room>(request);
+                await _repository.UpdateRoom(newRoom);
+
+            return StatusCode(201, $"Комната {request.Name} существует и обновлена.");
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using HomeApi.Data.Models;
+using HomeApi.Data.Queries;
 using Microsoft.EntityFrameworkCore;
 
 namespace HomeApi.Data.Repos
@@ -13,8 +14,8 @@ namespace HomeApi.Data.Repos
     public class RoomRepository : IRoomRepository
     {
         private readonly HomeApiContext _context;
-        
-        public RoomRepository (HomeApiContext context)
+
+        public RoomRepository(HomeApiContext context)
         {
             _context = context;
         }
@@ -35,7 +36,12 @@ namespace HomeApi.Data.Repos
         {
             return await _context.Rooms.Where(r => r.Name == name).FirstOrDefaultAsync();
         }
-        
+
+        public async Task<Room> GetRoomById(Guid Id)
+        {
+            return await _context.Rooms.Where(r => r.Id == Id).FirstOrDefaultAsync();
+        }
+
         /// <summary>
         ///  Добавить новую комнату
         /// </summary>
@@ -44,29 +50,35 @@ namespace HomeApi.Data.Repos
             var entry = _context.Entry(room);
             if (entry.State == EntityState.Detached)
                 await _context.Rooms.AddAsync(room);
-            
+
             await _context.SaveChangesAsync();
         }
+
         /// <summary>
         /// Обновить информацию о комнате
         /// </summary>
         /// <param name="room"></param>
+        /// <param name="query"></param>
         /// <returns></returns>
-        public async Task UpdateRoom(Room room)
+        public async Task UpdateRoom(Room room, UpdateRoomQuery query)
         {
+            var existedRoom = await _context.Rooms.Where(r => r.Id == room.Id).FirstOrDefaultAsync();
 
-            var existedRoom = await _context.Rooms.Where(r => r.Name == room.Name).FirstOrDefaultAsync();
+            if (existedRoom == null)
+            {
+                Console.WriteLine(room.Id + "NO");
+                return;
+            };
 
-            Console.WriteLine(room.Area + "\n" + existedRoom.Area);
+            existedRoom.Name = query.NewName;
+            existedRoom.Area = query.NewArea;
+            existedRoom.GasConnected = query.NewGasConnected;
+            existedRoom.Voltage = query.NewVoltage;
 
-            if (existedRoom == null) return;
-
-            existedRoom.Area = room.Area;
-            existedRoom.GasConnected = room.GasConnected;
-            existedRoom.Voltage = room.Voltage;
-
-
-            _context.Rooms.Update(existedRoom);
+            // Добавляем в базу 
+            var entry = _context.Entry(existedRoom);
+            if (entry.State == EntityState.Detached)
+                _context.Rooms.Update(existedRoom);
 
             await _context.SaveChangesAsync();
         }
